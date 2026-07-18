@@ -19,11 +19,13 @@
 | **Consumer Mimarisi** | Kademeli Pipeline (Seçenek B) | Çoklu topic, event-driven pipeline, daha profesyonel |
 | **Proje Türü** | Web API + Kullanıcı Arayüzü | REST endpoint'lerle sipariş gönderimi + görsel takip |
 | **Proje Yapısı** | Monorepo — Tek Solution | .NET Solution altında multiple projects |
-| **Branch Stratejisi** | `main` + `develop` | `develop` üzerinde geliştirme, PR ile `main`'e merge |
-| **Sync → Async Dönüşümü** | Issue + PR ile | Önce sync çalışan sistem, sonra async'e geçiş |
+| **Branch Stratejisi** | `develop` → PR → `main` | `develop` üzerinde geliştirme, PR ile `main`'e merge |
+| **Sync → Async Dönüşümü** | Issue #1 → PR #2 | Önce sync çalışan sistem, sonra async'e geçiş (202 Accepted) |
 | **ORM** | Entity Framework Core + SQLite | Hafif, dosya tabanlı, migration desteği |
 | **API Dokümantasyonu** | Scalar | Swagger'a modern alternatif, .NET 10 ile native destek |
 | **Consumer Projeleri** | Worker Service | Bağımsız çalıştırılabilir BackgroundService'ler |
+| **Blazor Render Mode** | InteractiveServer | .NET 10'da her sayfaya `@rendermode InteractiveServer` zorunlu |
+| **Blazor DbContext** | IServiceScopeFactory | Scoped DbContext disposed oluyor, her işlem için yeni scope |
 
 ---
 
@@ -101,14 +103,25 @@ Async Programming/
 
 | Aşama | Açıklama | Commit |
 |-------|----------|--------|
-| **Phase 1** | Proje scaffold, Docker altyapısı, Core katmanı | `init: project setup and core layer` |
-| **Phase 2** | Web API + Producer (sync sipariş gönderimi) | `feat: add web api with sync order creation` |
-| **Phase 3** | Consumer'ların devreye alınması | `feat: add kafka consumers` |
-| **Phase 4** | **Issue:** Sync → Async dönüşümü | PR ile çözülecek |
-| **Phase 5** | UI / Dashboard | `feat: add order monitoring dashboard` |
-| **Phase 6** | README, dokümantasyon, polish | `docs: add readme and documentation` |
+| **Phase 1** | Proje scaffold, Docker altyapısı, Core katmanı | `init: project scaffold with core models...` |
+| **Phase 2** | Web API + Sync işleme + Blazor Dashboard | `feat: add web api with sync order processing...` |
+| **Phase 3** | Kafka entegrasyonu + Worker Service'ler | `feat: add kafka producer and worker service consumers` |
+| **Phase 4** | **Issue #1 → PR #2:** Sync → Async dönüşümü | `refactor: convert order processing to fully async pipeline` |
+| **Phase 4 (fix)** | Blazor InteractiveServer, DbContext lifecycle, paket güncelleme | `fix: Blazor Server interactive mode, DbContext lifecycle...` |
+| **Phase 5** | README, dokümantasyon, final polish | `docs: add comprehensive readme and documentation` |
+
+## 🔧 Çözülen Sorunlar (Karar Kaydı)
+
+| Sorun | Çözüm |
+|-------|-------|
+| Kafka KRaft `0.0.0.0` hatası | `advertised.listeners` ve `listeners` ayrı ayrı yapılandırıldı |
+| API port conflict | Eski process `lsof -ti:5001` ile temizleniyor |
+| Log format exception (OrderPublisher) | `[{Topic}]` placeholder kaldırıldı |
+| Blazor DbContext disposed | `IServiceScopeFactory` ile her işlemde yeni scope |
+| Blazor butonlar çalışmıyor | Her sayfaya `@rendermode InteractiveServer` eklendi |
+| NU1903 güvenlik warning'leri | Paketler güncellendi + `Directory.Build.props` ile susturma |
 
 ---
 
-> **Son güncelleme:** 2026-07-18
+> **Son güncelleme:** 2026-07-19
 > **Katılımcı:** Serfiraz Abdullah Mumcu
