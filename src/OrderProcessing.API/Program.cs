@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using OrderProcessing.API.Services;
 using OrderProcessing.Core.Data;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var kafkaBootstrapServers = builder.Configuration.GetValue<string>("Kafka:BootstrapServers") ?? "localhost:9092";
 
 // ── Services ──────────────────────────────────────────────────────
 
@@ -17,6 +20,17 @@ builder.Services.AddRazorComponents()
 // EF Core - SQLite (portable, file-based database)
 builder.Services.AddDbContext<OrderDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Kafka - topic initialization on startup
+builder.Services.AddSingleton(new KafkaTopicInitializer(kafkaBootstrapServers));
+builder.Services.AddHostedService(sp => sp.GetRequiredService<KafkaTopicInitializer>());
+
+// Kafka - order publisher (singleton for connection pooling)
+builder.Services.AddSingleton<OrderPublisherService>(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<OrderPublisherService>>();
+    return new OrderPublisherService(kafkaBootstrapServers, logger);
+});
 
 // ── Middleware Pipeline ───────────────────────────────────────────
 

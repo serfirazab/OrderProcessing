@@ -1,7 +1,9 @@
 using OrderProcessing.EmailConsumer;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+
+// Kafka consumer worker
+builder.Services.AddHostedService<EmailConsumerWorker>();
 
 var host = builder.Build();
 host.Run();

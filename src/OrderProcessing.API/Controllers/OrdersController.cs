@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderProcessing.API.Dtos;
+using OrderProcessing.API.Services;
 using OrderProcessing.Core.Data;
 using OrderProcessing.Core.Models;
 
@@ -11,17 +12,22 @@ namespace OrderProcessing.API.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly OrderDbContext _db;
+    private readonly OrderPublisherService _publisher;
     private readonly ILogger<OrdersController> _logger;
 
-    public OrdersController(OrderDbContext db, ILogger<OrdersController> logger)
+    public OrdersController(
+        OrderDbContext db,
+        OrderPublisherService publisher,
+        ILogger<OrdersController> logger)
     {
         _db = db;
+        _publisher = publisher;
         _logger = logger;
     }
 
     /// <summary>
-    /// Creates a new order. Processes it synchronously and returns the created order.
-    /// (Phase 4 will convert this to fully async via Kafka.)
+    /// Creates a new order. Saves to DB and publishes to Kafka for async processing.
+    /// (Phase 4 will remove the sync processing and use 202 Accepted.)
     /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(Order), StatusCodes.Status201Created)]
@@ -51,7 +57,10 @@ public class OrdersController : ControllerBase
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation("Order {OrderId} created with total {TotalPrice:C}", order.Id, order.TotalPrice);
+        // Publish to Kafka for async consumer processing
+        await _publisher.PublishOrderAsync(order);
+
+        _logger.LogInformation("Order {OrderId} created and published to Kafka", order.Id);
 
         return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
     }
