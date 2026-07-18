@@ -126,41 +126,115 @@ Async Programming/
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for Kafka)
 
+> ⚠️ **Important:** All `dotnet run` commands below must be executed from the **solution root directory** (`Async Programming/` — where `OrderProcessing.sln` is located).
+
 ### 1. Start Kafka
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-Verify it's running:
+Wait for Kafka to become healthy before proceeding (this can take 10–30 seconds on first run):
+
+```bash
+# Poll until Kafka is healthy
+until docker ps --filter "name=orderprocessing-kafka" --filter "health=healthy" --format "{{.Status}}" | grep -q healthy; do
+  echo "Waiting for Kafka to be ready..."; sleep 2;
+done
+echo "Kafka is healthy!"
+```
+
+Or simply check manually:
 
 ```bash
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep kafka
 ```
 
-### 2. Start the API
+### 2. Trust the SSL Certificate (first time only)
+
+```bash
+dotnet dev-certs https --trust
+```
+
+### 3. Start the API
 
 ```bash
 dotnet run --project src/OrderProcessing.API/ --urls "https://localhost:5001"
 ```
 
+> If port 5001 is already in use, you can kill the previous process or use a different port:
+> ```bash
+> kill -9 $(lsof -ti:5001) 2>/dev/null
+> # Or use an alternative port:
+> dotnet run --project src/OrderProcessing.API/ --urls "https://localhost:5050"
+> ```
+
+Once the API is running, open:
 - **Blazor Dashboard:** https://localhost:5001/orders
 - **Scalar API Docs:** https://localhost:5001/scalar
+- **Scalar alt. URL:** https://localhost:5001/openapi/v1.json (Scalar may 302 redirect to the actual endpoint — if `/scalar` doesn't load, check the browser's redirect URL)
 
-### 3. Start the Workers (separate terminals)
+### 4. Start the Workers
+
+**Option A — Separate terminals** (recommended for seeing live logs):
 
 ```bash
-# Order Processor — main processing engine
+# Terminal 1: Order Processor — main processing engine
 dotnet run --project src/OrderProcessing.OrderProcessor/
 
-# Email Consumer — sends email notifications
+# Terminal 2: Email Consumer — sends email notifications
 dotnet run --project src/OrderProcessing.EmailConsumer/
 
-# Stock Consumer — manages inventory
+# Terminal 3: Stock Consumer — manages inventory
 dotnet run --project src/OrderProcessing.StockConsumer/
 
-# Logging Consumer — audit trail
+# Terminal 4: Logging Consumer — audit trail
 dotnet run --project src/OrderProcessing.LoggingConsumer/
+```
+
+**Option B — Single terminal with background processes:**
+
+```bash
+# Build once, then run all four in background
+dotnet build src/OrderProcessing.OrderProcessor/ --nologo -q
+dotnet build src/OrderProcessing.EmailConsumer/ --nologo -q
+dotnet build src/OrderProcessing.StockConsumer/ --nologo -q
+dotnet build src/OrderProcessing.LoggingConsumer/ --nologo -q
+
+dotnet run --project src/OrderProcessing.OrderProcessor/ --no-build &
+dotnet run --project src/OrderProcessing.EmailConsumer/ --no-build &
+dotnet run --project src/OrderProcessing.StockConsumer/ --no-build &
+dotnet run --project src/OrderProcessing.LoggingConsumer/ --no-build &
+
+echo "All workers started in background. Use 'jobs' to list, 'fg' to bring to foreground."
+```
+
+**Option C — Start script** (create `start-all.sh`):
+
+```bash
+#!/usr/bin/env bash
+# start-all.sh — Start all workers in background
+set -e
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+echo "Building workers..."
+dotnet build "$ROOT/src/OrderProcessing.OrderProcessor/" --nologo -q
+dotnet build "$ROOT/src/OrderProcessing.EmailConsumer/" --nologo -q
+dotnet build "$ROOT/src/OrderProcessing.StockConsumer/" --nologo -q
+dotnet build "$ROOT/src/OrderProcessing.LoggingConsumer/" --nologo -q
+
+echo "Starting workers..."
+dotnet run --project "$ROOT/src/OrderProcessing.OrderProcessor/" --no-build &
+dotnet run --project "$ROOT/src/OrderProcessing.EmailConsumer/" --no-build &
+dotnet run --project "$ROOT/src/OrderProcessing.StockConsumer/" --no-build &
+dotnet run --project "$ROOT/src/OrderProcessing.LoggingConsumer/" --no-build &
+echo "All workers started. Use 'kill %1 %2 %3 %4' to stop them."
+```
+
+Make it executable and run:
+
+```bash
+chmod +x start-all.sh
+./start-all.sh
 ```
 
 ---

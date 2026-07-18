@@ -108,7 +108,7 @@ Async Programming/
 | **Phase 3** | Kafka entegrasyonu + Worker Service'ler | `feat: add kafka producer and worker service consumers` |
 | **Phase 4** | **Issue #1 → PR #2:** Sync → Async dönüşümü | `refactor: convert order processing to fully async pipeline` |
 | **Phase 4 (fix)** | Blazor InteractiveServer, DbContext lifecycle, paket güncelleme | `fix: Blazor Server interactive mode, DbContext lifecycle...` |
-| **Phase 5** | README, dokümantasyon, final polish | `docs: add comprehensive readme and documentation` |
+| **Phase 5** | README, dokümantasyon, final polish | `docs: add comprehensive readme with multi-terminal guidance` |
 
 ## 🔧 Çözülen Sorunlar (Karar Kaydı)
 
