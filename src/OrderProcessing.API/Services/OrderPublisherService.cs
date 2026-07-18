@@ -55,7 +55,7 @@ public class OrderPublisherService
         var result = await _producer.ProduceAsync(KafkaTopics.RawOrders, message);
 
         _logger.LogInformation(
-            "Published order {OrderId} to Kafka [{Topic}] at offset {Offset}",
+            "Published order {OrderId} to Kafka at offset {Offset}",
             order.Id, result.TopicPartitionOffset);
     }
 

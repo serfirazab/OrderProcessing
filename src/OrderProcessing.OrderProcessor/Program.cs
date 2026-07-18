@@ -4,9 +4,12 @@ using OrderProcessing.OrderProcessor;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// EF Core - SQLite
+// EF Core - SQLite (shared database with API)
+var dbPath = Path.GetFullPath(
+    Path.Combine(builder.Environment.ContentRootPath, "..", "..", "data", "orders.db"));
+Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
 builder.Services.AddDbContext<OrderDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite($"Data Source={dbPath}"));
 
 // Kafka consumer worker
 builder.Services.AddHostedService<OrderProcessorWorker>();
