@@ -1,6 +1,7 @@
 @page "/orders/{id:guid}"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
-@inject OrderDbContext DbContext
+@inject IServiceScopeFactory ScopeFactory
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -86,7 +87,9 @@ else
 
     private async Task LoadOrder()
     {
-        order = await DbContext.Orders
+        using var scope = ScopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+        order = await db.Orders
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == Id);
 
