@@ -1,6 +1,9 @@
 @page "/orders/new"
-@inject HttpClient Http
+@rendermode InteractiveServer
+@inject IServiceScopeFactory ScopeFactory
+@inject OrderPublisherService OrderPublisher
 @inject NavigationManager Navigation
+@inject ILogger<NewOrder> Logger
 
 <PageTitle>New Order</PageTitle>
 
@@ -88,22 +91,61 @@
 
         try
         {
-            var request = new CreateOrderRequest
+            if (string.IsNullOrWhiteSpace(customerName))
+            {
+                error = "Customer name is required.";
+                isSubmitting = false;
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(customerEmail) || !customerEmail.Contains('@'))
+            {
+                error = "A valid email address is required.";
+                isSubmitting = false;
+                return;
+            }
+
+            var validItems = items.Where(i => !string.IsNullOrWhiteSpace(i.ProductName)).ToList();
+            if (validItems.Count == 0)
+            {
+                error = "At least one item is required.";
+                isSubmitting = false;
+                return;
+            }
+
+            // Create the order directly in the database (new scope for Blazor Server lifecycle)
+            using var scope = ScopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+
+            var order = new Order
             {
                 CustomerId = Guid.NewGuid(),
                 CustomerName = customerName,
                 CustomerEmail = customerEmail,
-                Items = items.Where(i => !string.IsNullOrWhiteSpace(i.ProductName)).ToList()
+                Items = validItems.Select(i => new OrderItem
+                {
+                    ProductId = i.ProductId == Guid.Empty ? Guid.NewGuid() : i.ProductId,
+                    ProductName = i.ProductName,
+                    UnitPrice = i.UnitPrice,
+                    Quantity = i.Quantity
+                }).ToList(),
+                Status = OrderStatus.Pending
             };
 
-            var response = await Http.PostAsJsonAsync("/api/orders", request);
-            response.EnsureSuccessStatusCode();
+            db.Orders.Add(order);
+            await db.SaveChangesAsync();
+
+            // Publish to Kafka for async processing
+            await OrderPublisher.PublishOrderAsync(order);
+
+            Logger.LogInformation("Order {OrderId} created from dashboard", order.Id);
 
             Navigation.NavigateTo("/orders");
         }
         catch (Exception ex)
         {
             error = $"Failed to create order: {ex.Message}";
+            Logger.LogError(ex, "Error creating order from dashboard");
         }
         finally
         {

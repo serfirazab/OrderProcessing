@@ -26,18 +26,23 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new order. Saves to DB and publishes to Kafka for async processing.
-    /// (Phase 4 will remove the sync processing and use 202 Accepted.)
+    /// Creates a new order asynchronously.
+    /// Validates only the input shape, saves as Pending, publishes to Kafka,
+    /// and returns 202 Accepted. The OrderProcessor worker handles the rest.
     /// </summary>
     [HttpPost]
-    [ProducesResponseType(typeof(Order), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Order>> CreateOrder([FromBody] CreateOrderRequest request)
+    public async Task<ActionResult> CreateOrder([FromBody] CreateOrderRequest request)
     {
         if (request.Items is null || request.Items.Count == 0)
             return BadRequest(new { Error = "Order must contain at least one item." });
 
-        // Map request to domain model
+        if (string.IsNullOrWhiteSpace(request.CustomerEmail) || !request.CustomerEmail.Contains('@'))
+            return BadRequest(new { Error = "A valid customer email is required." });
+
+        // Map request to domain model — no calculation, no validation
+        // OrderProcessor worker will validate and calculate asynchronously
         var order = new Order
         {
             CustomerId = request.CustomerId,
@@ -50,19 +55,26 @@ public class OrdersController : ControllerBase
                 UnitPrice = i.UnitPrice,
                 Quantity = i.Quantity
             }).ToList(),
-            TotalPrice = request.Items.Sum(i => i.UnitPrice * i.Quantity),
+            TotalPrice = 0, // Will be calculated by OrderProcessor
             Status = OrderStatus.Pending
         };
 
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
 
-        // Publish to Kafka for async consumer processing
+        // Publish to Kafka — OrderProcessor handles validation and calculation async
         await _publisher.PublishOrderAsync(order);
 
-        _logger.LogInformation("Order {OrderId} created and published to Kafka", order.Id);
+        _logger.LogInformation("Order {OrderId} submitted for async processing", order.Id);
 
-        return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
+        // Return 202 Accepted with tracking URL
+        return AcceptedAtAction(nameof(GetOrder), new { id = order.Id }, new
+        {
+            order.Id,
+            order.Status,
+            Message = "Order submitted for processing. Use the tracking URL to check status.",
+            TrackingUrl = Url.Action(nameof(GetOrder), null, new { id = order.Id }, Request.Scheme)
+        });
     }
 
     /// <summary>

@@ -8,6 +8,9 @@
 *.db-shm
 *.db-wal
 
+# Shared data directory
+data/
+
 # dotenv files
 .env
 

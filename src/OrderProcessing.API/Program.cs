@@ -17,9 +17,12 @@ builder.Services.AddOpenApi();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// EF Core - SQLite (portable, file-based database)
+// EF Core - SQLite (shared database with worker services)
+var dbPath = Path.GetFullPath(
+    Path.Combine(builder.Environment.ContentRootPath, "..", "..", "data", "orders.db"));
+Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
 builder.Services.AddDbContext<OrderDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite($"Data Source={dbPath}"));
 
 // Kafka - topic initialization on startup
 builder.Services.AddSingleton(new KafkaTopicInitializer(kafkaBootstrapServers));

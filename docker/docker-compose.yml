@@ -8,9 +8,9 @@ services:
       # KRaft mode - no Zookeeper needed
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: "broker,controller"
-      # Use routable hostnames for internal cluster communication
-      KAFKA_LISTENERS: "PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093"
-      # Advertise localhost for external clients (Docker host)
+      # Listen on all interfaces for external access; use hostname for controller quorum
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://kafka:9093"
+      # Advertise localhost so .NET apps running on the host can connect
       KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9092"
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
