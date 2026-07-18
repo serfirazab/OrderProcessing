@@ -93,7 +93,7 @@ Order Created (Pending)
 ## Project Structure
 
 ```
-Async Programming/
+OrderProcessing/
 ├── docker/
 │   └── docker-compose.yml          # Kafka (KRaft)
 ├── src/
@@ -126,7 +126,7 @@ Async Programming/
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for Kafka)
 
-> ⚠️ **Important:** All `dotnet run` commands below must be executed from the **solution root directory** (`Async Programming/` — where `OrderProcessing.sln` is located).
+> ⚠️ **Important:** All `dotnet run` commands below must be executed from the **solution root directory** (the directory containing `OrderProcessing.sln` — e.g. `OrderProcessing/` when cloned, or wherever the project is located).
 
 ### 1. Start Kafka
 
