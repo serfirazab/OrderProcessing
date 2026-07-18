@@ -269,19 +269,7 @@ Phase 4 was delivered as a **[GitHub Issue → Pull Request](https://github.com/
 
 ---
 
-## Screenshots
 
-| # | Screenshot | Description |
-|---|-----------|-------------|
-| 1 | ![Kafka Container](docs/screenshots/01-kafka-container.png) | Docker Kafka KRaft container running |
-| 2 | ![202 Accepted](docs/screenshots/02-api-202-accepted.png) | POST /api/orders returns 202 Accepted |
-| 3 | ![Order Processed](docs/screenshots/03-api-processed.png) | GET order shows "Processed" status |
-| 4 | ![Consumer Pipeline](docs/screenshots/04-consumer-pipeline.png) | Worker logs showing pipeline flow |
-| 5 | ![Orders Dashboard](docs/screenshots/05-dashboard-orders.png) | Blazor orders table with status badges |
-| 6 | ![New Order Form](docs/screenshots/06-dashboard-new-order.png) | Order creation form with dynamic items |
-| 7 | ![Scalar Docs](docs/screenshots/07-scalar-docs.png) | Scalar API documentation UI |
-
----
 
 ## Key Concepts Demonstrated
 
