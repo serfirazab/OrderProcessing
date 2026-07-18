@@ -1,0 +1,114 @@
+@page "/orders/{id:guid}"
+@using Microsoft.EntityFrameworkCore
+@inject OrderDbContext DbContext
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>Order Detail</PageTitle>
+
+@if (order is null)
+{
+    <div class="alert alert-danger">Order not found.</div>
+    <a href="/orders" class="btn btn-secondary">← Back to Orders</a>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Order @order.Id.ToString("N")[..8]...</h1>
+        <a href="/orders" class="btn btn-secondary">← Back</a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Customer:</strong> @order.CustomerName</p>
+                    <p><strong>Email:</strong> @order.CustomerEmail</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Status:</strong>
+                        <span class="badge @GetStatusBadge(order.Status) fs-6">@order.Status</span>
+                    </p>
+                    <p><strong>Total:</strong> @order.TotalPrice.ToString("C")</p>
+                    <p><strong>Created:</strong> @order.CreatedAt.ToLocalTime().ToString("g")</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(order.ErrorMessage))
+            {
+                <div class="alert alert-danger mt-3">
+                    ⚠️ @order.ErrorMessage
+                </div>
+            }
+        </div>
+    </div>
+
+    <h4>Order Items</h4>
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Product</th>
+                <th>Unit Price</th>
+                <th>Qty</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in order.Items)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.UnitPrice.ToString("C")</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.SubTotal.ToString("C")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private Order? order;
+    private Timer? timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrder();
+
+        // Auto-refresh every 3s for non-terminal statuses
+        timer = new Timer(async _ =>
+        {
+            await LoadOrder();
+            await InvokeAsync(StateHasChanged);
+        }, null, 3000, 3000);
+    }
+
+    private async Task LoadOrder()
+    {
+        order = await DbContext.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == Id);
+
+        // Stop polling when order reaches terminal state
+        if (order?.Status is OrderStatus.Processed or OrderStatus.Failed)
+        {
+            timer?.Dispose();
+            timer = null;
+        }
+    }
+
+    private string GetStatusBadge(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending => "bg-warning text-dark",
+        OrderStatus.Processing => "bg-info text-dark",
+        OrderStatus.Processed => "bg-success",
+        OrderStatus.Failed => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    public void Dispose()
+    {
+        timer?.Dispose();
+    }
+}
