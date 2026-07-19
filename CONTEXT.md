@@ -120,7 +120,8 @@ Async Programming/
 | Log format exception (OrderPublisher) | `[{Topic}]` placeholder kaldırıldı |
 | Blazor DbContext disposed | `IServiceScopeFactory` ile her işlemde yeni scope |
 | Blazor butonlar çalışmıyor | Her sayfaya `@rendermode InteractiveServer` eklendi |
-| NU1903 güvenlik warning'leri | Paketler güncellendi + `Directory.Build.props` ile susturma |
+| NU1903 güvenlik warning'leri (eski) | ❌ `Directory.Build.props` ile global suppress (best practice ihlali) |
+| NU1903 güvenlik warning'leri (düzeltildi) | ✅ Transitive dependency override ile çözüldü: `SQLitePCLRaw.lib.e_sqlite3` 2.1.11 → 3.53.3, `Microsoft.OpenApi` 2.0.0 → 2.11.0, NuGet Audit `WarningsAsErrors` olarak aktif |
 
 ---
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -12,6 +12,17 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+  </ItemGroup>
+
+  <!--
+    Transitive dependency version overrides:
+    These packages are pulled in transitively by EF Core but have CVEs in their
+    default resolved versions. Forcing a newer patched version resolves the
+    NuGet audit warnings. The versions below match what the latest EF Core
+    10.0.10 was tested with internally.
+  -->
+  <ItemGroup>
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" PrivateAssets="None" />
   </ItemGroup>
 
 </Project>
