@@ -21,4 +21,13 @@
     <ProjectReference Include="..\OrderProcessing.Core\OrderProcessing.Core.csproj" />
   </ItemGroup>
 
+  <!--
+    Transitive dependency version overrides:
+    Microsoft.AspNetCore.OpenApi 10.0.10 pulls in Microsoft.OpenApi 2.0.0
+    which has CVE GHSA-v5pm-xwqc-g5wc. Forcing 3.9.0 resolves it.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" PrivateAssets="None" />
+  </ItemGroup>
+
 </Project>

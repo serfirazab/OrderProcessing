@@ -109,6 +109,7 @@ Async Programming/
 | **Phase 4** | **Issue #1 → PR #2:** Sync → Async dönüşümü | `refactor: convert order processing to fully async pipeline` |
 | **Phase 4 (fix)** | Blazor InteractiveServer, DbContext lifecycle, paket güncelleme | `fix: Blazor Server interactive mode, DbContext lifecycle...` |
 | **Phase 5** | README, dokümantasyon, final polish | `docs: add comprehensive readme with multi-terminal guidance` |
+| **Phase 6** | Branch stratejisi düzeltmesi + v1.0.0 release | `main` oluşturuldu, develop main'e merge edildi, `v1.0.0` tag'i eklendi |
 
 ## 🔧 Çözülen Sorunlar (Karar Kaydı)
 
@@ -119,9 +120,16 @@ Async Programming/
 | Log format exception (OrderPublisher) | `[{Topic}]` placeholder kaldırıldı |
 | Blazor DbContext disposed | `IServiceScopeFactory` ile her işlemde yeni scope |
 | Blazor butonlar çalışmıyor | Her sayfaya `@rendermode InteractiveServer` eklendi |
-| NU1903 güvenlik warning'leri | Paketler güncellendi + `Directory.Build.props` ile susturma |
+| NU1903 güvenlik warning'leri (eski) | ❌ `Directory.Build.props` ile global suppress (best practice ihlali) |
+| NU1903 güvenlik warning'leri (düzeltildi) | ✅ Transitive dependency override ile çözüldü: `SQLitePCLRaw.lib.e_sqlite3` 2.1.11 → 3.53.3, `Microsoft.OpenApi` 2.0.0 → 2.11.0, NuGet Audit `WarningsAsErrors` olarak aktif |
 
 ---
 
 > **Son güncelleme:** 2026-07-19
+>
+> **🧹 Branch stratejisi düzeltmesi (portfolio):**
+> - `main` branch'i başlangıçta hiç oluşturulmamıştı; tüm commit'ler doğrudan `develop`'a atılmıştı
+> - Çözüm: `develop`'dan `main` branch'i oluşturuldu, GitHub'a push edildi
+> - `v1.0.0` tag'i eklendi
+> - GitHub repository ayarlarından default branch `develop` → `main` olarak değiştirilmeli
 > **Katılımcı:** Serfiraz Abdullah Mumcu
